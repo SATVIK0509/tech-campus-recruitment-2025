@@ -1,14 +1,27 @@
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
-function extractLogs(logFile, targetDate) {
+const LOG_FILE = "test_logs.log";
+const LOG_URL = "https://limewire.com/d/90794bb3-6831-4e02-8a59-ffc7f3b8b2a3#X1xnzrH5s4H_DKEkT_dfBuUT1mFKZuj4cFWNoMJGX98";
+
+function downloadLogFile() {
+    if (!fs.existsSync(LOG_FILE)) {
+        console.log("Downloading log file...");
+        execSync(`curl -L -o ${LOG_FILE} "${LOG_URL}"`, { stdio: 'inherit' });
+    } else {
+        console.log("Log file already exists. Skipping download.");
+    }
+}
+
+function extractLogs(targetDate) {
     const outputDir = "output";
     if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir);
     }
     const outputFile = path.join(outputDir, `output_${targetDate}.txt`);
     
-    const readStream = fs.createReadStream(logFile, 'utf-8');
+    const readStream = fs.createReadStream(LOG_FILE, 'utf-8');
     const writeStream = fs.createWriteStream(outputFile, 'utf-8');
     
     readStream.on('data', (chunk) => {
@@ -29,11 +42,11 @@ function extractLogs(logFile, targetDate) {
     });
 }
 
-if (process.argv.length !== 4) {
-    console.log("Usage: node extractLogs.js <log_file> <YYYY-MM-DD>");
+if (process.argv.length !== 3) {
+    console.log("Usage: node extractLogs.js <YYYY-MM-DD>");
     process.exit(1);
 }
 
-const logFile = process.argv[2];
-const targetDate = process.argv[3];
-extractLogs(logFile, targetDate);
+const targetDate = process.argv[2];
+downloadLogFile();
+extractLogs(targetDate);
